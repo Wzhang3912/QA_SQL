@@ -8,7 +8,7 @@ import argparse
 from app import *
 
 def main():
-    # Set up argument parser
+    # Argument parser
     parser = argparse.ArgumentParser(
         description="A SQL question-answering LLM tool."
     )

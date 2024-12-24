@@ -19,9 +19,11 @@ def LLM_response(messages, model_name, url="http://localhost:11434/api/generate"
     """
     
     if model_name[:3].lower() == 'gpt':
-        api_key = os.getenv('OPENAI_API_KEY')
-        if api_key is None:
-            raise ValueError('OPEN AI api key not found')
+        # api_key = os.getenv('OPENAI_API_KEY')
+        # if api_key is None:
+        #    raise ValueError('OPEN AI api key not found')
+
+        api_key = 'REPLACE WITH OPENAI API KEY'
         
         response = GPT_response(messages, model_name, api_key=api_key)
         

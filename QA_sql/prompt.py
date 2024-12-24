@@ -1,5 +1,15 @@
-
 def message_construct(schema_info, question):
+    """
+    Construct a prompt message to for LLM in generating a SQL query.
+
+    Args:
+        schema_info (str): A string representing the schema of a database. 
+        question (str): The user's question.
+
+    Returns:
+        list[dict]: A list of message objects in a format for input to an LLM.
+
+    """
 
     content = f"""
     Your task is to convert a question into a syntactically correct SQL query, given a Postgres database schema.

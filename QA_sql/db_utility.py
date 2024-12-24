@@ -163,7 +163,15 @@ def get_schema_info(db_name):
 
 def execute_sql(sql_statement, db_name):
     """
-    Execute sql statement for the given database.
+    Execute an SQL statement for the given database and retrieve results.
+
+    Args:
+        sql_statement (str): The SQL query to be executed.
+        db_name (str): The name of the database to connect to.
+
+    Returns:
+        - result (list[tuples]): The rows returned by executing the query.
+        - columns_header (list[str]): The column header of the result.
     """
     with get_cursor(db_name) as cur:
         cur.execute(sql_statement)
@@ -175,7 +183,14 @@ def execute_sql(sql_statement, db_name):
 
 def format_output(result, col_header):
     """
-    Format raw database output in pretty table format 
+    Format raw database output into table format.
+
+    Args:
+        result (list[tuples]): The rows returned by the query.
+        col_header (list[str]): The column headers of the result.
+
+    Returns:
+        str: A string representation of the data formatted as a table.
     """
 
     table = ''
