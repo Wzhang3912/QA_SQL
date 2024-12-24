@@ -8,7 +8,7 @@ An SQL question-answering tool for the PostgreSQL database based on LLM.
 Install the necessary dependencies for connecting with the PostgreSQL database and using the OpenAI Large Language Model:
 
 ```bash
-$ pip install openai psycopg2-binary
+pip install openai psycopg2-binary
 ```
 
 Then, replace your OpenAI API key in the `QA_sql\LLM.py` file.
@@ -18,7 +18,7 @@ Then, replace your OpenAI API key in the `QA_sql\LLM.py` file.
 Run the following Python script to open the interactive UI application:
 
 ```bash
-$ python QA_sql/run.py --model_name MODEL_NAME --database_name DATABASE_NAME
+python QA_sql/run.py --model_name MODEL_NAME --database_name DATABASE_NAME
 ```
 
 Replace `MODEL_NAME` with your choice of LLM model and `DATABASE_NAME` with your database name. 
