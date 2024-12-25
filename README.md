@@ -25,3 +25,6 @@ Replace `MODEL_NAME` with your choice of LLM model and `DATABASE_NAME` with your
 
 The application supports both locally hosted models and OpenAI models.
 
+## Demos
+
+![Demos Examples](images/demos.png)
