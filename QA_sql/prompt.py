@@ -1,14 +1,13 @@
-def message_construct(schema_info, question):
+def SQL_question_message(schema_info, question):
     """
-    Construct a prompt message to for LLM in generating a SQL query.
+    Construct a prompt message for LLM to generate a SQL query.
 
     Args:
         schema_info (str): A string representing the schema of a database. 
         question (str): The user's question.
 
     Returns:
-        list[dict]: A list of message objects in a format for input to an LLM.
-
+        list[dict]: A list of message in a format for input to an LLM.
     """
 
     content = f"""
@@ -41,4 +40,41 @@ def message_construct(schema_info, question):
         }
     ]
 
+    return messages
+
+
+def question_answer_message(question, query, result):
+    """
+    Construct a prompt message for the LLM to generate answers based on the SQL query result.
+
+    Args:
+        question (str): The user's question.
+        query (str): The SQL query obtained from LLM response.
+        result (str): The result of the SQL query execution.
+
+    Returns:
+        list[dict]: A list of message in a format for input to an LLM.
+
+    """
+
+    content = f"""
+    Given the following user question, corresponding SQL query,
+    and SQL result, answer the user question directly, in 1-2 sentences.
+
+    User Question: {question}
+    SQL Query: {query}
+    SQL Result: {result}
+    """
+
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant for answering questions given query result."
+        }, 
+        {
+            "role": "user", 
+            "content": content
+        }
+    ]
+    
     return messages
