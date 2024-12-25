@@ -1,5 +1,5 @@
 # QA_SQL
-An SQL question-answering tool for the PostgreSQL database based on LLM. 
+An LLM-driven SQL questions-answering tool for PostgreSQL database. 
 
 ## Set Up
 
