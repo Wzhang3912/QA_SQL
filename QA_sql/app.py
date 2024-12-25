@@ -27,13 +27,13 @@ class app():
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         left_frame = tk.Frame(main_frame, bg="#f2f2f2")
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, padx=10, pady=5)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         right_frame = tk.Frame(main_frame, bg="#f2f2f2")
-        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, padx=10, pady=5)
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Left-side components
-        tk.Label(left_frame, text="Responses", font=("Helvetica", 14, "bold"), bg="#f5f5f5").pack(anchor="nw", pady=5)
+        tk.Label(left_frame, text="Response", font=("Helvetica", 14, "bold"), bg="#f5f5f5").pack(anchor="nw", pady=5)
         self.response_box = tk.Text(left_frame, wrap=tk.WORD, height=20, width=58, font=("Helvetica", 14))
         self.response_box.pack(fill=tk.BOTH)
         self.response_box.config(state=tk.DISABLED)
@@ -85,12 +85,15 @@ class app():
             message = message_construct(self.schema_info, question)
             
             print('Generating response...')
-            response = LLM_response(message, self.model_name)
 
             self.response_box.config(state=tk.NORMAL) 
-            self.response_box.delete("1.0", tk.END)    # Clear previous content
-            self.response_box.insert(tk.END, response)
-            self.response_box.config(state=tk.DISABLED) 
+            self.response_box.delete("1.0", tk.END)   
+            
+            # LLM streaming response
+            for chunk in LLM_response(message, self.model_name, stream=True):
+                self.response_box.insert(tk.END, chunk) 
+                self.response_box.yview(tk.END) 
+                self.response_box.update() 
             
             # make extract sql button available
             self.extract_sql_button.pack(side="left", padx=25)
@@ -144,3 +147,19 @@ class app():
         except Exception as e:
             messagebox.showerror("Error", f"Failed to extract the SQL statement from LLM response.\n{e}")
 
+    def _steaming_response(self, response):
+        """
+        Simulates steaming effect.
+        """
+        index = 0
+        def type_next_char():
+            nonlocal index
+            if index < len(response):
+                self.response_box.insert(tk.END, response[index])  # Insert the next character
+                self.response_box.yview(tk.END)  # Scroll to the end of the box
+                index += 1
+                self.root.after(20, type_next_char)  # Adjust the delay here (in milliseconds)
+            else:
+                self.response_box.config(state=tk.DISABLED)  # Disable the box after typing is done
+
+        type_next_char()  # Start the typing simulation

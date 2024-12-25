@@ -4,9 +4,9 @@ import requests
 from openai import OpenAI
 import time
 import os
+import json
 
-
-def LLM_response(messages, model_name, url="http://localhost:11434/api/generate"):
+def LLM_response(messages, model_name, stream=True, url="http://localhost:11434/api/generate"):
     """
     Fetch responses from LLM
 
@@ -19,45 +19,75 @@ def LLM_response(messages, model_name, url="http://localhost:11434/api/generate"
     """
     
     if model_name[:3].lower() == 'gpt':
-        # api_key = os.getenv('OPENAI_API_KEY')
-        # if api_key is None:
-        #    raise ValueError('OPEN AI api key not found')
-
-        api_key = 'REPLACE WITH OPENAI API KEY'
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key is None:
+           raise ValueError('OPEN AI api key not found')
         
-        response = GPT_response(messages, model_name, api_key=api_key)
+        # uncomment the code below, put api key here if you don't want to set up os environment variable
+        # api_key = 'REPLACE YOUR OPENAI API KEY HERE'
+
+        response = GPT_response(messages, model_name, stream=stream, api_key=api_key)
         
         return response
-        
-    else:
-        prompt = "\n".join(
-            [f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages]
-        )
-        data = {
-            "model": model_name,
-            "prompt": prompt,
-            "top_p": 1,
-            "frequency_penalty": 0,
-            "presence_penalty": 0,
-            "stream": False,
-        }
-        
-        try:
-            response = requests.post(url=url, json=data)
+    
+    prompt = "\n".join(
+        [f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages]
+    )
+    data = {
+        "model": model_name,
+        "prompt": prompt,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "stream": stream,
+    }
 
+    def _stream_response(data, url):
+        try:
+            # LLM streaming
+            print('Streaming')
+            response = requests.post(url=url, json=data, stream=True)
             if response.status_code == 200:
-                response_text = response.json().get("response", "")
-                
-                return response_text
+                for line in response.iter_lines():
+                    if line:
+                        try:
+                            # Parse JSON response
+                            chunk = json.loads(line.decode('utf-8'))
+                            yield chunk.get("response", "")
+
+                            if chunk.get("done", False):
+                                break  # done streaming
+                        except json.JSONDecodeError:
+                            continue
             else:
                 print("Error:", response.status_code, response.json())
                 return None
+
         except Exception as e:
             print(f"API call failed: {e}")
             return None
 
+    def _response(data, url):
+        try:
+            response = requests.post(url=url, json=data)
+            if response.status_code == 200:
+                response_text = response.json().get("response", "")
+                return response_text
+            else:
+                print("Error:", response.status_code, response.json())
+                return None
 
-def GPT_response(messages, model_name, api_key=None):
+        except Exception as e:
+            print(f"API call failed: {e}")
+            return None
+        
+    if stream:
+        return _stream_response(data, url)
+    else:
+        return _response(data, url)
+
+
+def GPT_response(messages, model_name, stream=True, api_key=None):
     """
     Fetch response from openai LLM model
 
@@ -73,39 +103,45 @@ def GPT_response(messages, model_name, api_key=None):
 
     client = OpenAI(api_key=api_key)
 
-    try:
-        result = client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0,
-        )
-    except Exception as e:
-        print(e)
+    def _stream_response(client, messages, model_name):
+        print('Streaming')
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stream=True,
+            )
+            # yield the parts of the response as they come
+            for chunk in response:
+                if chunk.choices[0].delta.content is not None:
+                    yield chunk.choices[0].delta.content
+        except Exception as e:
+            print(f"API call failed: {e}")
+            return None
+
+    def _response(client, messages, model_name):
         try:
             result = client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
+                model=model_name,
+                messages=messages,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stream=stream,
             )
-        except:
-            try:
-                print(f"{model_name} Waiting 60 seconds for API query")
-                time.sleep(60)
-                result = client.chat.completions.create(
-                    model=model_name,
-                    messages=messages,
-                    top_p=1,
-                    frequency_penalty=0,
-                    presence_penalty=0,
-                )
-            except:
-                return "Out of tokens"
+            return result.choices[0].message.content
+
+        except Exception as e:
+            print(f"API call failed: {e}")
+            return None
     
-    return result.choices[0].message.content
+    if stream:
+        return _stream_response(client, messages, model_name)
+    else:
+        return _response(client, messages, model_name)
 
 
 # def LLaMA_response_json(

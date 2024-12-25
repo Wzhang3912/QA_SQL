@@ -13,12 +13,14 @@ def main():
         description="A SQL question-answering LLM tool."
     )
     parser.add_argument(
+        "-m",
         "--model_name",
         type=str,
         required=True,
         help="LLM model to be used for.",
     )
     parser.add_argument(
+        "-d",
         "--database_name",
         type=str,
         required=True,
