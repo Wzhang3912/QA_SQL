@@ -1,4 +1,4 @@
-def SQL_question_message(schema_info, question):
+def SQL_question_message(schema_info: str, question: str) -> list[dict]:
     """
     Construct a prompt message for LLM to generate a SQL query.
 
@@ -25,25 +25,20 @@ def SQL_question_message(schema_info, question):
     """
 
     messages = [
-        {
-            "role": "system",
-            "content": """
+        {"role": "system", "content": """
     You are a helpful assistant for generating SQL queries.
     Pay attention to use only the column names that you can see in the schema description. 
     Be careful to not query for columns that do not exist. 
     Also, pay attention to which column is in which table. 
     """
         }, 
-        {
-            "role": "user", 
-            "content": content
-        }
+        {"role": "user", "content": content}
     ]
 
     return messages
 
 
-def question_answer_message(question, query, result):
+def question_answer_message(question: str, query: str, result: str) -> list[dict]:
     """
     Construct a prompt message for the LLM to generate answers based on the SQL query result.
 
@@ -67,14 +62,8 @@ def question_answer_message(question, query, result):
     """
 
     messages = [
-        {
-            "role": "system",
-            "content": "You are a helpful assistant for answering questions given query result."
-        }, 
-        {
-            "role": "user", 
-            "content": content
-        }
+        {"role": "system", "content": "You are a helpful assistant for answering questions given query result."}, 
+        {"role": "user", "content": content}
     ]
     
     return messages

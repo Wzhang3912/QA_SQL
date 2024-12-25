@@ -189,3 +189,4 @@ class app():
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to extract the SQL statement from LLM response.\n{e}")
+

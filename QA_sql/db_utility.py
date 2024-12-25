@@ -1,12 +1,14 @@
 import psycopg2
+from psycopg2.extensions import cursor
+from typing import Tuple
 
 def get_cursor(
-        database,
-        host = "localhost", 
-        user = "postgres", 
-        password = "admin", 
-        port = 5432
-    ):
+        database: str,
+        host: str = "localhost", 
+        user: str = "postgres", 
+        password: str = "admin", 
+        port: int = 5432
+    ) -> cursor:
     """
     Establish connection to a PostgreSQL database
 
@@ -34,7 +36,7 @@ def get_cursor(
     return cursor
 
 
-def get_schema_info(db_name):
+def get_schema_info(db_name: str) -> str:
     """
     Get SQL schema for the given PostgreSQL database.
 
@@ -161,7 +163,9 @@ def get_schema_info(db_name):
     return "\n\n".join(create_statements)
 
 
-def execute_sql(sql_statement, db_name):
+def execute_sql(
+        sql_statement: str, db_name: str
+    ) -> Tuple[list[Tuple], list[str]]:
     """
     Execute an SQL statement for the given database and retrieve results.
 
@@ -181,12 +185,14 @@ def execute_sql(sql_statement, db_name):
     return result, columns_header
 
 
-def format_output(result, col_header):
+def format_output(
+        result: list[Tuple], col_header: list[str]
+    ) -> str:
     """
     Format raw database output into table format.
 
     Args:
-        result (list[tuples]): The rows returned by the query.
+        result (list[tuple]): The rows returned by the query.
         col_header (list[str]): The column headers of the result.
 
     Returns:
