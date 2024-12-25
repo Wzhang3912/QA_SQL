@@ -23,6 +23,12 @@ class app():
             )
         description_label.pack(fill="x", padx=10, pady=10)
 
+        self.status_label = tk.Label(
+            self.root, text=f'Status: ', 
+            font=("Helvetica", 12), bg="#f5f5f5", anchor="w"
+            )
+        self.status_label.pack(fill="x", padx=10)
+
         # Main frame
         main_frame = tk.Frame(self.root, bg="#f2f2f2")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -87,27 +93,26 @@ class app():
         try:
             # disable button while generating response
             self.extract_execute_button.pack_forget()
+            self.status_label.config(text="Status: generating response...")
 
             prompt = SQL_question_message(self.schema_info, self.question)
-            
-            print('Generating response...')
 
             self.response_box.config(state=tk.NORMAL)   # Make the box editable
             self.response_box.delete("1.0", tk.END)     #  Clear previous content
             self.response_box.update()
-            
             # LLM streaming response
             for chunk in LLM_response(prompt, self.model_name, stream=True):
                 self.response_box.insert(tk.END, chunk) 
                 self.response_box.yview(tk.END) 
                 self.response_box.update()
-
             self.response_box.config(state=tk.DISABLED)  # Disable editing
 
             # make extract sql button available
             self.extract_execute_button.pack(side="left", padx=25)
+            self.status_label.config(text="Status: ")
 
         except Exception as e:
+            self.status_label.config(text="Status: ")
             messagebox.showerror("Error", f"Failed to connect to the backend.\n{e}")
 
 
@@ -127,6 +132,8 @@ class app():
             return
 
         try:
+            self.status_label.config(text="Status: executing SQL queries...")
+
             query_result, col_header = execute_sql(sql_statement, self.db_name)
             table = format_output(query_result, col_header)
 
@@ -138,7 +145,10 @@ class app():
             if return_result:
                 return query_result, col_header
 
+            self.status_label.config(text="Status: ")
+
         except Exception as e:
+            self.status_label.config(text="Status: ")
             messagebox.showerror("Error", f"Failed to execute the SQL statement.\n{e}")
 
 
@@ -170,6 +180,9 @@ class app():
             self.sql_result_box.update()
 
             prompt = question_answer_message(self.question, extracted_sql, query_result)
+            
+            self.status_label.config(text="Status: generating response...")
+            self.status_label.update()
 
             # continue answering user's question if user click extract & execute SQL
             self.response_box.config(state=tk.NORMAL)
@@ -182,11 +195,12 @@ class app():
                 self.response_box.insert(tk.END, chunk) 
                 self.response_box.yview(tk.END) 
                 self.response_box.update()
-
             self.response_box.config(state=tk.DISABLED)
 
             self.extract_execute_button.pack_forget()
+            self.status_label.config(text="Status: ")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to extract the SQL statement from LLM response.\n{e}")
+            self.status_label.config(text="Status: ")
+            messagebox.showerror("Error", f"Failed to extract and execute SQL statement.\n{e}")
 
