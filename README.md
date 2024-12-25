@@ -27,4 +27,7 @@ The application supports both locally hosted models and OpenAI models.
 
 ## Demos
 
-![Demos Examples](images/demos.png)
+<video width="640" height="360" controls>
+  <source src="assets/videos/demos_video.mov" type="video/mov">
+  Your browser does not support the video tag.
+</video>
