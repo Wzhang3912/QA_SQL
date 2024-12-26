@@ -219,3 +219,17 @@ def format_output(
     table += line
 
     return table
+
+
+def detect_keyword(sql_statement: str) -> str | None:
+    """
+    Detect if keyword present in the sql statement
+    """
+    KEYWORDS = ['INSERT INTO', 'UPDATE', 'DELETE FROM', 'CREATE TABLE', 'DROP TABLE', 'ALTER TABLE', 'TRUNCATE TABLE']
+
+    for keyword in KEYWORDS:
+        if keyword in sql_statement.upper():
+            return keyword
+    
+    return None
+

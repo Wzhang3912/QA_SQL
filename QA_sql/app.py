@@ -132,6 +132,17 @@ class app():
             return
 
         try:
+            keyword = detect_keyword(sql_statement)
+
+            # if detected keyword, show warning
+            if keyword is not None:
+                result = messagebox.askokcancel(
+                    "Confirmation", 
+                    f"The query is attempted to perform '{keyword}' statement. Would you like to proceed?"
+                )
+                if not result:
+                    return
+
             self.status_label.config(text="Status: executing SQL queries...")
 
             query_result, col_header = execute_sql(sql_statement, self.db_name)
@@ -142,15 +153,14 @@ class app():
             self.sql_result_box.insert(tk.END, table)
             self.sql_result_box.config(state=tk.DISABLED) 
 
+            self.status_label.config(text="Status: ")
+
             if return_result:
                 return query_result, col_header
-
-            self.status_label.config(text="Status: ")
 
         except Exception as e:
             self.status_label.config(text="Status: ")
             messagebox.showerror("Error", f"Failed to execute the SQL statement.\n{e}")
-
 
     def extract_and_execute_sql_button(self):
         """
@@ -177,7 +187,6 @@ class app():
 
             # execute SQL statements and retrieve the results
             query_result, _ = self.execute_sql_button(return_result=True)
-            self.sql_result_box.update()
 
             prompt = question_answer_message(self.question, extracted_sql, query_result)
             
