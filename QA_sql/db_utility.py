@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2.extensions import cursor
 from typing import Tuple
+import re
 
 def get_cursor(
         database: str,
@@ -224,12 +225,26 @@ def format_output(
 def detect_keyword(sql_statement: str) -> str | None:
     """
     Detect if keyword present in the sql statement
-    """
-    KEYWORDS = ['INSERT INTO', 'UPDATE', 'DELETE FROM', 'CREATE TABLE', 'DROP TABLE', 'ALTER TABLE', 'TRUNCATE TABLE']
-
-    for keyword in KEYWORDS:
-        if keyword in sql_statement.upper():
-            return keyword
     
+    Args:
+        sql_statement (str): The SQL query to detect keyword.
+
+    Returns:
+        str: return the found keyeword or None if keyword not found
+    """
+    KEYWORDS = ['INSERT INTO', 'DELETE FROM', 'CREATE TABLE', 'DROP TABLE', 'ALTER TABLE', 'TRUNCATE TABLE']
+
+    # RE for general keywords
+    general_pattern = re.compile(r'\b(' + '|'.join(re.escape(keyword) for keyword in KEYWORDS) + r')\b', re.IGNORECASE)
+
+    # RE for UPDATE
+    update_pattern = re.compile(r'\bUPDATE\s+\w+\s+SET\b', re.IGNORECASE)
+    if update_pattern.search(sql_statement):
+        return 'UPDATE'
+
+    match = general_pattern.search(sql_statement)
+    if match:
+        return match.group(0)
+
     return None
 

@@ -5,6 +5,7 @@ def SQL_question_message(schema_info: str, question: str, feedback: str = None) 
     Args:
         schema_info (str): A string representing the schema of a database. 
         question (str): The user's question.
+        feedback (str): The feedback prompt to LLM.
 
     Returns:
         list[dict]: A list of message in a format for input to an LLM.
