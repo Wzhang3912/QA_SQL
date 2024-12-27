@@ -65,7 +65,7 @@ def LLM_response(
 
         except Exception as e:
             print(f"API call failed: {e}")
-            return None
+            raise Exception
 
     def _response(data, url):
         try:
@@ -79,7 +79,7 @@ def LLM_response(
 
         except Exception as e:
             print(f"API call failed: {e}")
-            return None
+            raise Exception
         
     if stream:
         return _stream_response(data, url)
@@ -122,7 +122,7 @@ def GPT_response(
                     yield chunk.choices[0].delta.content
         except Exception as e:
             print(f"API call failed: {e}")
-            return None
+            raise Exception
 
     def _response(client, messages, model_name):
         try:
@@ -135,7 +135,7 @@ def GPT_response(
 
         except Exception as e:
             print(f"API call failed: {e}")
-            return None
+            raise Exception
     
     if stream:
         return _stream_response(client, messages, model_name)

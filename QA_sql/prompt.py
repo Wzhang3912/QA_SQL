@@ -1,4 +1,4 @@
-def SQL_question_message(schema_info: str, question: str) -> list[dict]:
+def SQL_question_message(schema_info: str, question: str, feedback: str = None) -> list[dict]:
     """
     Construct a prompt message for LLM to generate a SQL query.
 
@@ -23,6 +23,11 @@ def SQL_question_message(schema_info: str, question: str) -> list[dict]:
 
     {schema_info}
     """
+
+    if feedback is not None:
+        content += f"""
+    \nPrevious SQL queries generation failed, here is the feedback: {feedback} 
+    Please take into consideration while generating response."""
 
     messages = [
         {"role": "system", "content": """
