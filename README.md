@@ -27,4 +27,7 @@ The application supports both locally hosted models and OpenAI models.
 
 ## Demos
 
-![Demos Examples](assets/videos/demos.gif)
+![Demos Example 1](assets/videos/demos_1.gif)
+
+Generate answer for user's question.
+![Demos Example 2](assets/videos/demos_2.gif)
