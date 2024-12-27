@@ -22,7 +22,7 @@ def main():
 
     args = parser.parse_args()
 
-    sql_app = app(args.model_name, args.database_name)
+    sql_app = App(args.model_name, args.database_name)
     sql_app.run()
 
 

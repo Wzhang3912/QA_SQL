@@ -8,13 +8,15 @@ from LLM import LLM_response
 from prompt import SQL_question_message, question_answer_message
 from db_utility import *
 
-class app():
+class App:
     def __init__(self, model_name, db_name):
         '''UI Initialization'''
         self.root = tk.Tk()
         self.root.title("SQL Q&A Tool")
         self.root.geometry("1000x620") 
         self.root.configure(bg="#f5f5f5")
+        icon = tk.PhotoImage(file="assets/icon.png")
+        self.root.iconphoto(False, icon)
 
         # Description
         description_label = tk.Label(
@@ -222,6 +224,8 @@ class app():
         """
         Function to automatically generate resposen, extract sql statement, and answer the user's question.  
 
+        LLM response -> extract SQL -> execute SQL -> display result -> answer question
+
         The agent is capable to regenerate response with feedback if exception arises
         """
         MAX_RETRY = 3
@@ -284,7 +288,7 @@ class app():
                 self.status_label.config(text=f"Status: generation failed for error {e}, retrying...")
                 self.status_label.update()
                 if feedback is None:
-                    feedback = f"Generation failed for error: {e}. "
+                    feedback = f"Generation failed for error: {e}."
                 time.sleep(3)
                 current_retry += 1
                 continue
