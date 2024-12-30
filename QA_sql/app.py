@@ -5,10 +5,11 @@ import time
 
 # local files
 from LLM import LLM_response
-from prompt import SQL_question_message, question_answer_message
-from db_utility import *
+from prompt import *
+from db_utils import *
 
 class App:
+
     def __init__(self, model_name, db_name):
         '''UI Initialization'''
         self.root = tk.Tk()
@@ -73,12 +74,16 @@ class App:
         execute_button = tk.Button(right_frame, text="Execute SQL Statement", font=("Helvetica", 14), bg="#2196F3", command=self.execute_sql_button)
         execute_button.place(x=5, y=480)
 
+        self.chat_button = tk.Button(left_frame, text="Chat", font=("Helvetica", 14), bg="#2196F3", command=self.chat_button)
 
         '''Variable initialization'''
         self.db_name = db_name
         self.model_name = model_name
-        self.question = None
         self.schema_info = get_schema_info(self.db_name)
+        # save the first question and user prompt 
+        self.question = None
+        self.prompt = None
+        self.history = None
 
 
     def run(self):
@@ -100,13 +105,13 @@ class App:
             self.extract_execute_button.place_forget()
             self.status_label.config(text="Status: generating response...")
 
-            prompt = SQL_question_message(self.schema_info, self.question)
+            self.prompt = SQL_question_message(self.schema_info, self.question)
 
             self.response_box.config(state=tk.NORMAL)   # Make the box editable
             self.response_box.delete("1.0", tk.END)     #  Clear previous content
             self.response_box.update()
             # LLM streaming response
-            for chunk in LLM_response(prompt, self.model_name, stream=True):
+            for chunk in LLM_response(self.prompt, self.model_name, stream=True):
                 self.response_box.insert(tk.END, chunk) 
                 self.response_box.yview(tk.END) 
                 self.response_box.update()
@@ -129,7 +134,7 @@ class App:
             return_result (bool): whether return the query result or not
         
         Returns:
-            str: the query result
+            str: the query result if return_result is True
         """
         sql_statement = self.sql_entry_box.get("1.0", tk.END).strip()  # Get text from the Text widget
         if not sql_statement:
@@ -167,9 +172,13 @@ class App:
             self.status_label.config(text="Status: ")
             messagebox.showerror("Error", f"Failed to execute the SQL statement.\n{e}")
 
+
     def extract_and_execute_sql_button(self, extracted_sql = None):
         """
         Function to extract the sql statement from LLM response. 
+
+        Args:
+            extracted_sql (str): the extracted SQL statement from LLM response
         """
         response = self.response_box.get("1.0", tk.END).strip()
         if not response:
@@ -194,7 +203,9 @@ class App:
             # execute SQL statements and retrieve the results
             query_result, _ = self.execute_sql_button(return_result=True)
 
-            prompt = question_answer_message(self.question, extracted_sql, query_result)
+            prompt = question_answer_message(
+                self.question, extracted_sql, query_result, history=self.history
+            )
             
             self.status_label.config(text="Status: generating answers...")
             self.status_label.update()
@@ -203,24 +214,31 @@ class App:
             self.response_box.config(state=tk.NORMAL)
             self.response_box.insert(
                 tk.END, 
-                "\n\n--------------------------------------------------------------------------------------------------\n\nAnswer: ")
+                "\n\nAnswer: ")
 
+            LLM_answer = []
             # LLM streaming response
             for chunk in LLM_response(prompt, self.model_name, stream=True):
-                self.response_box.insert(tk.END, chunk) 
+                self.response_box.insert(tk.END, chunk)
                 self.response_box.yview(tk.END) 
                 self.response_box.update()
+                LLM_answer.append(chunk)
             self.response_box.config(state=tk.DISABLED)
-
             self.extract_execute_button.place_forget()
             self.status_label.config(text="Status: ")
+
+            # append conservation history
+            self.history.extend(self.prompt)
+            self.history.append({"role": "assistant", "content": extracted_sql})
+            self.history.append(prompt[1])  # only need user prompt
+            self.history.append({"role": "assistant", "content": "".join(LLM_answer)})
 
         except Exception as e:
             self.status_label.config(text="Status: ")
             messagebox.showerror("Error", f"Failed to extract and execute SQL statement.\n{e}")
 
     
-    def question_answering_agent(self):
+    def question_answering_agent(self, chat_mode = False):
         """
         Function to automatically generate resposen, extract sql statement, and answer the user's question.  
 
@@ -238,6 +256,11 @@ class App:
             messagebox.showwarning("Input Error", "Please enter a question.")
             return
         
+        # reinitialize chat button set up
+        if not chat_mode:
+            self.chat_button.place_forget()
+            self.history = []
+
         # LLM regenerate response
         while (current_retry <= MAX_RETRY):
             # ---generate response---
@@ -245,8 +268,10 @@ class App:
                 self.status_label.config(text="Status: generating SQL queries...")
                 self.status_label.update()
 
-                prompt = SQL_question_message(self.schema_info, self.question, feedback=feedback)
-                response = LLM_response(prompt, self.model_name, stream=False)
+                self.prompt = SQL_question_message(
+                    self.schema_info, self.question, feedback=feedback, history=self.history
+                )
+                response = LLM_response(self.prompt, self.model_name, stream=False)
                 feedback = None
 
             except Exception as e:
@@ -263,7 +288,7 @@ class App:
                 else:
                     feedback = """
     The generated SQL query is not formatted correctly. 
-    Please ensure the query is enclosed in proper SQL code block delimiters (```sql ... ```)"""
+    Please ensure the query is enclosed in proper SQL code block delimiters (```sql```)."""
                     raise Exception
                 
                 # ---keyword detection---
@@ -273,15 +298,28 @@ class App:
                 if keyword is not None:
                     feedback = f"""
     The generated SQL query is attempted to perform '{keyword}' statement. 
-    Please ensure that queries are limited to SELECT statements only, as they should not modify the data."""
+    Please ensure that queries are limited to SELECT query statements only."""
                     raise Exception
 
                 self.response_box.config(state=tk.NORMAL)
-                self.response_box.delete("1.0", tk.END)
-                display_response = 'Generated SQL queries: \n\n' + extracted_sql + '\n\nExecuting queries...'
+                
+                # chat_mode will not clear response box
+                if chat_mode:
+                    display_response = f"""
+\n--------------------------------------------------------------------------------------------------\n
+User Question: {self.question}
+
+Generated SQL queries: \n```\n{extracted_sql}\n```"""
+                else:
+                    self.response_box.delete("1.0", tk.END)
+                    display_response = f'Generated SQL queries: \n```\n{extracted_sql}\n```'
                 self.response_box.insert(tk.END, display_response)
+                self.response_box.yview(tk.END) 
+                self.response_box.update()
 
                 self.extract_and_execute_sql_button(extracted_sql=extracted_sql)
+
+                self.chat_button.place(x=200, y=510)
                 break
 
             except Exception as e:
@@ -289,7 +327,7 @@ class App:
                 self.status_label.update()
                 if feedback is None:
                     feedback = f"Generation failed for error: {e}."
-                time.sleep(3)
+                time.sleep(2)
                 current_retry += 1
                 continue
 
@@ -321,3 +359,9 @@ class App:
 
         #     type_next_char()
 
+
+    def chat_button(self):
+        """
+        Function to continue chatting with LLM after a response
+        """
+        self.question_answering_agent(chat_mode=True)

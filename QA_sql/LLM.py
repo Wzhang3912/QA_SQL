@@ -23,11 +23,12 @@ def LLM_response(
     
     if model_name[:3].lower() == 'gpt':
         api_key = os.getenv('OPENAI_API_KEY')
-        if api_key is None:
-           raise ValueError('OPEN AI API key not found')
-        
+
         # uncomment the code below, put api key here if you don't want to set up os environment variable
         # api_key = 'REPLACE YOUR OPENAI API KEY HERE'
+
+        if api_key is None:
+           raise ValueError('OPEN AI API key not found')
 
         response = GPT_response(messages, model_name, stream=stream, api_key=api_key)
         
