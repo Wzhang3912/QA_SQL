@@ -82,7 +82,7 @@ class App:
         self.schema_info = get_schema_info(self.db_name)
         # save the first question and user prompt 
         self.question = None
-        self.prompt = None
+        self.num_conservation = 0
         self.history = None
 
 
@@ -105,13 +105,13 @@ class App:
             self.extract_execute_button.place_forget()
             self.status_label.config(text="Status: generating response...")
 
-            self.prompt = SQL_question_message(self.schema_info, self.question)
+            prompt = SQL_question_message(self.schema_info, self.question)
 
             self.response_box.config(state=tk.NORMAL)   # Make the box editable
             self.response_box.delete("1.0", tk.END)     #  Clear previous content
             self.response_box.update()
             # LLM streaming response
-            for chunk in LLM_response(self.prompt, self.model_name, stream=True):
+            for chunk in LLM_response(prompt, self.model_name, stream=True):
                 self.response_box.insert(tk.END, chunk) 
                 self.response_box.yview(tk.END) 
                 self.response_box.update()
@@ -173,7 +173,7 @@ class App:
             messagebox.showerror("Error", f"Failed to execute the SQL statement.\n{e}")
 
 
-    def extract_and_execute_sql_button(self, extracted_sql = None):
+    def extract_and_execute_sql_button(self, extracted_sql = None, chat_mode = False):
         """
         Function to extract the sql statement from LLM response. 
 
@@ -198,14 +198,20 @@ class App:
             self.sql_entry_box.insert(tk.END, extracted_sql)
             self.sql_entry_box.update()
 
-            time.sleep(2)
+            time.sleep(1)
 
             # execute SQL statements and retrieve the results
             query_result, _ = self.execute_sql_button(return_result=True)
 
-            prompt = question_answer_message(
-                self.question, extracted_sql, query_result, history=self.history
-            )
+            # add history method if chat_mode on
+            if chat_mode:
+                prompt = question_answer_message(
+                    self.question, extracted_sql, query_result, history=self.history, model_name=self.model_name
+                )
+            else:
+                prompt = question_answer_message(
+                    self.question, extracted_sql, query_result, model_name=self.model_name
+                )
             
             self.status_label.config(text="Status: generating answers...")
             self.status_label.update()
@@ -227,10 +233,11 @@ class App:
             self.extract_execute_button.place_forget()
             self.status_label.config(text="Status: ")
 
-            # append conservation history
-            self.history.extend(self.prompt)
-            self.history.append({"role": "assistant", "content": extracted_sql})
-            self.history.append(prompt[1])  # only need user prompt
+            # Update history based on chat_mode. 
+            if chat_mode:
+                self.history = prompt
+            else: 
+                self.history.append(prompt[1])
             self.history.append({"role": "assistant", "content": "".join(LLM_answer)})
 
         except Exception as e:
@@ -259,7 +266,7 @@ class App:
         # reinitialize chat button set up
         if not chat_mode:
             self.chat_button.place_forget()
-            self.history = []
+            self.history = None
 
         # LLM regenerate response
         while (current_retry <= MAX_RETRY):
@@ -268,10 +275,10 @@ class App:
                 self.status_label.config(text="Status: generating SQL queries...")
                 self.status_label.update()
 
-                self.prompt = SQL_question_message(
-                    self.schema_info, self.question, feedback=feedback, history=self.history
+                prompt = SQL_question_message(
+                    self.schema_info, self.question, feedback=feedback, history=self.history, model_name=self.model_name
                 )
-                response = LLM_response(self.prompt, self.model_name, stream=False)
+                response = LLM_response(prompt, self.model_name, stream=False)
                 feedback = None
 
             except Exception as e:
@@ -316,8 +323,12 @@ Generated SQL queries: \n```\n{extracted_sql}\n```"""
                 self.response_box.insert(tk.END, display_response)
                 self.response_box.yview(tk.END) 
                 self.response_box.update()
+                
+                # Update history
+                self.history = prompt
+                self.history.append({"role": "assistant", "content": extracted_sql})
 
-                self.extract_and_execute_sql_button(extracted_sql=extracted_sql)
+                self.extract_and_execute_sql_button(extracted_sql=extracted_sql, chat_mode=chat_mode)
 
                 self.chat_button.place(x=200, y=510)
                 break
