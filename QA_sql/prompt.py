@@ -1,6 +1,7 @@
 from typing import Tuple
 import tiktoken
 from LLM import LLM_response
+from utils import RESULT_LIMIT, INPUT_TOKEN_LIMIT
 
 def SQL_question_message(
         question: str, 
@@ -67,7 +68,6 @@ def question_answer_message(
     Returns:
         list[dict]: A list of message in a format for input to an LLM.
     """
-    RESULT_LIMIT = 20
 
     if len(result) > RESULT_LIMIT:
         result = str(result[:RESULT_LIMIT])[:-1] + f", ..., which has {len(result)} number of rows."
@@ -98,8 +98,6 @@ def _chat_history(
     Instructions:
     1. Refer to preivous response to provide contextually relevant answers.
     2. If a question or statement directly relates to something in the past, refer back to it explicitly."""
-
-    INPUT_TOKEN_LIMIT = 16384
 
     # Token checker and summarizer
     if count_tokens(history, model_name) > INPUT_TOKEN_LIMIT and len(history) > 5:

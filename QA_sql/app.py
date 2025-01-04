@@ -8,6 +8,7 @@ import copy
 from LLM import LLM_response
 from prompt import *
 from db_utils import *
+from utils import MAX_RETRY
 
 class App:
 
@@ -281,7 +282,6 @@ class App:
 
         The agent is capable to regenerate response with feedback if exception arises
         """
-        MAX_RETRY = 3
         current_retry = 1
         feedback = None     # LLM feedback prompt
 
