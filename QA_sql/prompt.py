@@ -3,7 +3,6 @@ import tiktoken
 from LLM import LLM_response
 
 def SQL_question_message(
-        schema_info: str, 
         question: str, 
         feedback: str = None, 
         history: list[dict] = None, 
@@ -18,21 +17,13 @@ def SQL_question_message(
         feedback (str): The feedback prompt to LLM.
 
     Returns:
-        list[dict]: A list of message in a format for input to an LLM.
+        Tuple(list[dict], list[dict]): A list of message in a format for input to an LLM.
     """
 
     content = f"""
-    Your task is to answer the question by generating a syntactically correct SQL query, given a database schema.
-    Adhere to these rules:
-    - **Deliberately go through the question and database schema word by word** to appropriately answer the question
-    - **Use Table Aliases** to prevent ambiguity. For example, `SELECT table1.col1, table2.col1 FROM table1 JOIN table2 ON table1.id = table2.id`.
-    - When creating a ratio, always cast the numerator as float
-
-    Input:
-    Generate a SQL query that answers the user question: `{question}`.
-    This query will run on a database whose schema is represented in the format:
-
-    {schema_info}"""
+    Your task is to answer the user question: `{question}`.
+    If answering the user question requires retrieval from a database, then generated a syntactically correct SQL query to retrieve the answers, given the database schema.
+    """
 
     if feedback is not None:
         content += f"""
@@ -44,21 +35,17 @@ def SQL_question_message(
             {"role": "system", "content": """
     You are a helpful assistant for generating SQL queries.
     Adhere to these rules:
-    - **Deliberately go through the question and database schema word by word** to appropriately answer the question
+    - **Deliberately go through the question and database schema word by word** to appropriately answer the question.
     - **Use Table Aliases** to prevent ambiguity. For example, `SELECT table1.col1, table2.col1 FROM table1 JOIN table2 ON table1.id = table2.id`.
-    - When creating a ratio, always cast the numerator as float
-    - Pay attention to use only the column names that you can see in the schema description. 
-    - Pay attention to which column is in which table."""
-            }, 
+    - When creating a ratio, always cast the numerator as float.
+    - Pay attention to **use only the column names that you see in the schema description**.
+    - Pay attention to **which column is in which table**."""}, 
             {"role": "user", "content": content}
         ]
 
         return messages
     # given history, add instruction
     else:
-        content = f"""
-    Your task is to answer the user question {question}.
-    If the Generated a syntactically correct SQL query if necessary to answer the user question."""
         return _chat_history(content, history, model_name)
         
 
@@ -67,7 +54,7 @@ def question_answer_message(
         query: str, 
         result: list[Tuple], 
         history: list[dict] = None, 
-        model_name: str = 'gpt-4o'
+        model_name: str = 'gpt-4o', 
     ) -> list[dict]:
     """
     Construct a prompt message for the LLM to generate answers based on the SQL query result.
@@ -83,7 +70,7 @@ def question_answer_message(
     RESULT_LIMIT = 20
 
     if len(result) > RESULT_LIMIT:
-        result = f"{result[:RESULT_LIMIT]} etc, which has {len(result)} number of rows."
+        result = str(result[:RESULT_LIMIT])[:-1] + f", ..., which has {len(result)} number of rows."
 
     content = f"""
     Given the following user question, corresponding SQL query,
@@ -93,20 +80,15 @@ def question_answer_message(
     SQL Result: {result}
     User Question: {question}
     """
-    print(history)
-    if history is None:
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant for answering user questions."}, 
-            {"role": "user", "content": content}
-        ]
-        
-        return messages
-    else:
-        print(1)
-        return _chat_history(content, history, model_name)
+
+    return _chat_history(content, history, model_name)
 
 
-def _chat_history(content, history, model_name):
+def _chat_history(
+        content: str, 
+        history: list[dict], 
+        model_name: str
+    ) -> list[dict]:
     """
     Add chatting instruction for prompt  
     Summarize preivous conservation if length exceeds limits
@@ -121,29 +103,29 @@ def _chat_history(content, history, model_name):
 
     # Token checker and summarizer
     if count_tokens(history, model_name) > INPUT_TOKEN_LIMIT and len(history) > 5:
-        print('Summarizing')
-        print(f'BEFORE TOKEN: {count_tokens(history, model_name)}')
-        # long term memory includes system prompt and schema infomation
-        long_term_memory = history[:2]
+
+        # long term memory includes system prompt
+        long_term_memory = history[0]
         # short term memory includes LLM response and user questions
-        short_term_memory = history[2:]
+        short_term_memory = history[1:]
 
         summary_question = {"role": "user", "content": "Summarize my previous conversation into a brief summary."}
         summary_response = {"role": "assistant", "content": summarizer(short_term_memory, model_name)}
-        
-        long_term_memory.append(summary_question)
-        long_term_memory.append(summary_response)
-        history = long_term_memory
-        print(summary_response)
+
+        new_history = [long_term_memory]
+        new_history.append(summary_question)
+        new_history.append(summary_response)
+        history = new_history
 
     history.append({"role": "user", "content": content})
-    print(history)
-    print(f'AFTER TOKEN: {count_tokens(history, model_name)}')
 
     return history
 
 
-def count_tokens(messages, model_name="gpt-4o-mini"):
+def count_tokens(
+        messages: list[dict], 
+        model_name="gpt-4o-mini"
+    ) -> int:
     """
     Count number of tokens in messages prompt for OpenAI model.
 
@@ -177,7 +159,7 @@ def count_tokens(messages, model_name="gpt-4o-mini"):
         return word_count(messages)
 
 
-def word_count(messages):
+def word_count(messages: list[dict]) -> int:
     """
     Count the number of words in messages prompt
     Alternative to token counter, give an estimate of the number of tokens when model tokenizer is unknown

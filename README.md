@@ -8,7 +8,7 @@ An LLM-driven SQL questions-answering tool for PostgreSQL database.
 Install the necessary dependencies for connecting with the PostgreSQL database and using the OpenAI Large Language Model:
 
 ```bash
-pip install openai psycopg2-binary
+pip install openai psycopg2-binary tiktoken
 ```
 
 Then, replace your OpenAI API key in the `QA_sql\LLM.py` file.
