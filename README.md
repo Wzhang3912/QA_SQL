@@ -26,8 +26,11 @@ Replace `MODEL_NAME` with your choice of LLM model and `DATABASE_NAME` with your
 The application supports both locally hosted models and OpenAI models.
 
 ## Demos
+- Click `Generate Response` for generating a response that contains SQL query
+- Click `Extract & Execute SQL` for extracting SQL query from response, executing query and displaying the results. 
 
 ![Demos Example 1](assets/videos/demos_1.gif)
 
-Generate answer for user's question.
+- Click `Generate Answer` for generating a answer to the question, given the result retrieved from the database.
+
 ![Demos Example 2](assets/videos/demos_2.gif)
