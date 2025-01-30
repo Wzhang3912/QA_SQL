@@ -1,0 +1,12 @@
+name: sql-tool
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python
+  - pip
+  - pip:
+      - openai==1.55.1
+      - psycopg2-binary==2.9.10
+      - tiktoken
+

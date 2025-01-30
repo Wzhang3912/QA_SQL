@@ -11,7 +11,7 @@ Install the necessary dependencies for connecting with the PostgreSQL database a
 pip install openai psycopg2-binary tiktoken
 ```
 
-Then, replace your OpenAI API key in the `QA_sql\LLM.py` file.
+Then, put your OpenAI API key in the `QA_sql/configs/config.conf` file.
 
 ### Run
 

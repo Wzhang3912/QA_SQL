@@ -139,8 +139,6 @@ class App:
             self.history = new_history
             self.history.append({"role": "assistant", "content": self.response})
 
-            print(self.history, len(self.history))
-
             # make extract sql button available
             self.extract_execute_button.place(x=200, y=480)
             self.status_label.config(text="Status: ")
@@ -261,8 +259,6 @@ class App:
             # update history
             #self.history.append(prompt[-1])     # retrieve the user question
             self.history.append({"role": "assistant", "content": "".join(LLM_answer)})
-            
-            print(self.history, len(self.history))
 
             self.extract_execute_button.place_forget()
             self.status_label.config(text="Status: ")
