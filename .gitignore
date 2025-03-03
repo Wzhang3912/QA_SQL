@@ -1,6 +1,8 @@
 # python
 *__pycache__
 *.ipynb_checkpoints
-*.DS_Store
 *.ipynb
+
+# mac
+*.DS_Store
 

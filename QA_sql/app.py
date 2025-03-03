@@ -382,6 +382,7 @@ class App:
         self.generate_button.place(x=5, y=480)
         self.answer_button.place(x=5, y=510)
         self.open_session_button.place_forget()
+        self.extract_execute_button.place_forget()
 
         self.history = None
         self.num_conservation = 0

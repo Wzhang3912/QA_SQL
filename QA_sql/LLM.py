@@ -2,6 +2,7 @@ import requests
 from openai import OpenAI
 import json
 from utils import API_KEY
+import os
 
 def LLM_response(
         messages: list[dict], 
@@ -21,7 +22,10 @@ def LLM_response(
     """
     
     if model_name[:3].lower() == 'gpt':
-        api_key = API_KEY
+        if 'OPENAI_API_KEY' in os.environ:
+            api_key = os.getenv('OPENAI_API_KEY')
+        else:
+            api_key = API_KEY
 
         if api_key is None:
            raise ValueError('API key not found. Make sure to add your api key to the config file.')

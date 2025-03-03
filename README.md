@@ -21,7 +21,13 @@ Install the necessary dependencies for connecting with the PostgreSQL database a
 pip install openai psycopg2-binary tiktoken
 ```
 
-Then, put your OpenAI API key in the `QA_sql/configs/config.conf` file.
+### LLM set up
+
+The application supports both locally hosted models and OpenAI models.
+
+- Download ollama for hosting LLM locally: [here](https://ollama.com/download)
+- Register your OpenAI API Key for using OpenAI model: [here](https://platform.openai.com/docs/api-reference/introduction)
+    - Put your API key in the `QA_sql/configs/config.conf` file.
 
 ### Run
 
@@ -32,6 +38,4 @@ python QA_sql/run.py --model_name MODEL_NAME --database_name DATABASE_NAME
 ```
 
 Replace `MODEL_NAME` with your choice of LLM model and `DATABASE_NAME` with your database name. 
-
-The application supports both locally hosted models and OpenAI models.
 
